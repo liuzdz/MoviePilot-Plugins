@@ -20,7 +20,7 @@ class AlistCopy(_PluginBase):
     # 插件图标
     plugin_icon = "statistic.png"
     # 插件版本
-    plugin_version = "1.0.3"
+    plugin_version = "1.0.4"
     # 插件作者
     plugin_author = "liuzdz"
     # 作者主页
@@ -197,20 +197,26 @@ class AlistCopy(_PluginBase):
         logger.info("目录实时监控-alist复制，lalalalal2---4")
         # 转移信息
         item_transfer: TransferInfo = item.get("transferinfo")
+        logger.info("目录实时监控-alist复制，lalalalal2---5")
         # 类型
         item_type = item_media.type
+        logger.info("目录实时监控-alist复制，lalalalal2---6")
         # 目的路径
         item_dest: Path = item_transfer.target_path
+        logger.info("目录实时监控-alist复制，lalalalal2---7")
         # 是否蓝光原盘
         item_bluray = item_transfer.is_bluray
+        logger.info("目录实时监控-alist复制，lalalalal2---8")
         # 文件清单
         item_file_list = item_transfer.file_list_new
+        logger.info("目录实时监控-alist复制，lalalalal2---9")
 
         if item_bluray:
             # 蓝光原盘虚拟个文件
             item_file_list = ["%s.mp4" % item_dest / item_dest.name]
-
+        logger.info("目录实时监控-alist复制，lalalalal2---10")
         for file_path in item_file_list:
+            logger.info("目录实时监控-alist复制，lalalalal2---11-%s" % file_path)
             # 路径替换
             if self._local_path and self._remote_path and file_path.startswith(self._local_path):
                 file_path = file_path.replace(self._local_path, self._remote_path).replace('\\', '/')

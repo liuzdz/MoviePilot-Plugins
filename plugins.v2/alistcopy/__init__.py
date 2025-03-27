@@ -20,7 +20,7 @@ class AlistCopy(_PluginBase):
     # 插件图标
     plugin_icon = "statistic.png"
     # 插件版本
-    plugin_version = "1.0.2"
+    plugin_version = "1.0.3"
     # 插件作者
     plugin_author = "liuzdz"
     # 作者主页
@@ -183,19 +183,18 @@ class AlistCopy(_PluginBase):
     @eventmanager.register(EventType.TransferComplete)
     def download(self, event: Event):
         logger.info("目录实时监控-alist复制，lalalalal2")
-        """
-        调用ChineseSubFinder下载字幕
-        """
         if not self._enabled or not self._host or not self._api_key:
             return
+        logger.info("目录实时监控-alist复制，lalalalal2---1")
         item = event.event_data
+        logger.info("目录实时监控-alist复制，lalalalal2---2")
         if not item:
             return
-        # 请求地址
-        req_url = "%sapi/v1/add-job" % self._host
+        logger.info("目录实时监控-alist复制，lalalalal2---3")
 
         # 媒体信息
         item_media: MediaInfo = item.get("mediainfo")
+        logger.info("目录实时监控-alist复制，lalalalal2---4")
         # 转移信息
         item_transfer: TransferInfo = item.get("transferinfo")
         # 类型

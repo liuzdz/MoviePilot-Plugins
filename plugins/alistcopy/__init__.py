@@ -12,13 +12,13 @@ from app.schemas.types import EventType, MediaType
 from app.utils.http import RequestUtils
 
 
-class ChineseSubFinder(_PluginBase):
+class AlistCopy(_PluginBase):
     # 插件名称
     plugin_name = "目录实时监控-alist复制"
     # 插件描述
     plugin_desc = "监控目录文件变化，自动复制媒体文件至alist目录。"
     # 插件图标
-    plugin_icon = "chinesesubfinder.png"
+    plugin_icon = "statistic.png"
     # 插件版本
     plugin_version = "1.0.0"
     # 插件作者

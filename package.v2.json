@@ -3,11 +3,12 @@
         "name": "alist复制",
         "description": "目录实时监控-alist复制。",
         "labels": "alist",
-        "version": "1.0.5",
+        "version": "1.1.0",
         "icon": "statistic.png",
         "author": "liuzdz",
         "level": 2,
         "history": {
+            "v1.1.0": "调试完成的可用版本",
             "v1.0.5": "升级5",
             "v1.0.4": "升级4",
             "v1.0.3": "升级3",

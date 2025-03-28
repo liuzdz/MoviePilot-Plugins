@@ -12,6 +12,7 @@ from app.schemas.types import EventType, MediaType
 from app.utils.http import RequestUtils
 from app.schemas.file import FileItem
 from app.modules.filemanager.storages.alist import Alist
+import os
 
 
 class AlistCopy(_PluginBase):
@@ -22,7 +23,7 @@ class AlistCopy(_PluginBase):
     # 插件图标
     plugin_icon = "statistic.png"
     # 插件版本
-    plugin_version = "1.0.5"
+    plugin_version = "1.1.0"
     # 插件作者
     plugin_author = "liuzdz"
     # 作者主页
@@ -37,8 +38,6 @@ class AlistCopy(_PluginBase):
     # 私有属性
     _save_tmp_path = None
     _enabled = False
-    _host = None
-    _api_key = None
     _remote_path = None
     _remote_target_path = None
     _local_path = None
@@ -47,13 +46,6 @@ class AlistCopy(_PluginBase):
         self._save_tmp_path = settings.TEMP_PATH
         if config:
             self._enabled = config.get("enabled")
-            self._api_key = config.get("api_key")
-            self._host = config.get('host')
-            if self._host:
-                if not self._host.startswith('http'):
-                    self._host = "http://" + self._host
-                if not self._host.endswith('/'):
-                    self._host = self._host + "/"
             self._local_path = config.get("local_path")
             self._remote_path = config.get("remote_path")
             self._remote_target_path = config.get("remote_target_path")
@@ -85,43 +77,6 @@ class AlistCopy(_PluginBase):
                                         'props': {
                                             'model': 'enabled',
                                             'label': '启用插件',
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        'component': 'VRow',
-                        'content': [
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12,
-                                    'md': 6
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'host',
-                                            'label': '服务器'
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12,
-                                    'md': 6
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'api_key',
-                                            'label': 'API密钥'
                                         }
                                     }
                                 ]
@@ -190,8 +145,6 @@ class AlistCopy(_PluginBase):
             }
         ], {
             "enabled": False,
-            "host": "",
-            "api_key": "",
             "local_path": "",
             "remote_path": "",
             "remote_target_path": ""
@@ -209,15 +162,13 @@ class AlistCopy(_PluginBase):
     @eventmanager.register(EventType.TransferComplete)
     def download(self, event: Event):
         logger.info("目录实时监控-alist复制，开始处理")
-        if not self._enabled or not self._host or not self._api_key:
+        if not self._enabled or not self._remote_path or not self._remote_target_path:
             return
         item = event.event_data
         if not item:
             return
         # 转移信息
         item_transfer: TransferInfo = item.get("transferinfo")
-        # 文件清单
-        item_file_list = item_transfer.file_list_new
         # 转移后的目录项
         #target_diritem: FileItem = item_transfer.target_diritem
         # 文件路径
@@ -229,16 +180,16 @@ class AlistCopy(_PluginBase):
         # 文件清单
         item_file_list = item_transfer.file_list_new
         for file_path in item_file_list:
-            target_diritem_path = os.path.dirname(file_path)
-            target_item_name = os.path.basename(file_path)
-            logger.info("目录实时监控-alist复制，文件路径: %s" % target_diritem_path)
-            logger.info("目录实时监控-alist复制，文件名称: %s" % target_item_name)
+            file_dir = os.path.dirname(file_path)
+            file_name = os.path.basename(file_path)
+            logger.info("目录实时监控-alist复制，文件路径: %s" % file_dir)
+            logger.info("目录实时监控-alist复制，文件名称: %s" % file_name)
             src_dir = ''
             dst_dir = ''
-            if self._local_path and self._remote_path and file_path.startswith(self._local_path):
+            if self._local_path and self._remote_path and file_dir.startswith(self._local_path):
                 src_dir = file_path.replace(self._local_path, self._remote_path).replace('\\', '/')
-            if self._local_path and self._remote_target_path and target_diritem_path.startswith(self._local_path):
-                dst_dir = target_diritem_path.replace(self._local_path, self._remote_target_path).replace('\\', '/')
+            if self._local_path and self._remote_target_path and file_dir.startswith(self._local_path):
+                dst_dir = file_dir.replace(self._local_path, self._remote_target_path).replace('\\', '/')
             logger.info("目录实时监控-alist复制，源文件: %s" % src_dir)
             logger.info("目录实时监控-alist复制，目标文件夹: %s" % dst_dir)
 
@@ -246,10 +197,10 @@ class AlistCopy(_PluginBase):
                 logger.info("目录实时监控-alist复制，准备调用alist")
                 fileItem: FileItem = FileItem()
                 fileItem.path = src_dir
-                fileItem.name = target_item_name
-                logger.info("目录实时监控-alist复制，准备调用alist-11111")
+                fileItem.name = file_name
                 alist = Alist()
+                logger.info("目录实时监控-alist复制，检查目标文件夹")
                 alist.get_folder(Path(dst_dir))
-                logger.info("目录实时监控-alist复制，准备调用alist-22222")
-                alist.copy(fileItem, Path(dst_dir), name)
+                logger.info("目录实时监控-alist复制，调用复制")
+                alist.copy(fileItem, Path(dst_dir), file_name)
                 logger.info("目录实时监控-alist复制，结束调用alist")

@@ -10,6 +10,8 @@ from app.plugins import _PluginBase
 from app.schemas import TransferInfo
 from app.schemas.types import EventType, MediaType
 from app.utils.http import RequestUtils
+from app.schemas.file import FileItem
+from app.modules.filemanager.storages.alist import Alist
 
 
 class AlistCopy(_PluginBase):
@@ -20,7 +22,7 @@ class AlistCopy(_PluginBase):
     # 插件图标
     plugin_icon = "statistic.png"
     # 插件版本
-    plugin_version = "1.0.4"
+    plugin_version = "1.0.5"
     # 插件作者
     plugin_author = "liuzdz"
     # 作者主页
@@ -38,6 +40,7 @@ class AlistCopy(_PluginBase):
     _host = None
     _api_key = None
     _remote_path = None
+    _remote_target_path = None
     _local_path = None
 
     def init_plugin(self, config: dict = None):
@@ -53,6 +56,7 @@ class AlistCopy(_PluginBase):
                     self._host = self._host + "/"
             self._local_path = config.get("local_path")
             self._remote_path = config.get("remote_path")
+            self._remote_target_path = config.get("remote_target_path")
 
     @staticmethod
     def get_command() -> List[Dict[str, Any]]:
@@ -160,6 +164,27 @@ class AlistCopy(_PluginBase):
                                 ]
                             }
                         ]
+                    },
+                    {
+                        'component': 'VRow',
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'remote_target_path',
+                                            'label': '目标路径',
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             }
@@ -168,7 +193,8 @@ class AlistCopy(_PluginBase):
             "host": "",
             "api_key": "",
             "local_path": "",
-            "remote_path": ""
+            "remote_path": "",
+            "remote_target_path": ""
         }
 
     def get_state(self) -> bool:
@@ -182,42 +208,48 @@ class AlistCopy(_PluginBase):
 
     @eventmanager.register(EventType.TransferComplete)
     def download(self, event: Event):
-        logger.info("目录实时监控-alist复制，lalalalal2")
+        logger.info("目录实时监控-alist复制，开始处理")
         if not self._enabled or not self._host or not self._api_key:
             return
-        logger.info("目录实时监控-alist复制，lalalalal2---1")
         item = event.event_data
-        logger.info("目录实时监控-alist复制，lalalalal2---2")
         if not item:
             return
-        logger.info("目录实时监控-alist复制，lalalalal2---3")
-
-        # 媒体信息
-        item_media: MediaInfo = item.get("mediainfo")
-        logger.info("目录实时监控-alist复制，lalalalal2---4")
         # 转移信息
         item_transfer: TransferInfo = item.get("transferinfo")
-        logger.info("目录实时监控-alist复制，lalalalal2---5")
-        # 类型
-        item_type = item_media.type
-        logger.info("目录实时监控-alist复制，lalalalal2---6")
-        # 目的路径
-        item_dest: Path = item_transfer.target_path
-        logger.info("目录实时监控-alist复制，lalalalal2---7")
-        # 是否蓝光原盘
-        item_bluray = item_transfer.is_bluray
-        logger.info("目录实时监控-alist复制，lalalalal2---8")
         # 文件清单
         item_file_list = item_transfer.file_list_new
-        logger.info("目录实时监控-alist复制，lalalalal2---9")
-
-        if item_bluray:
-            # 蓝光原盘虚拟个文件
-            item_file_list = ["%s.mp4" % item_dest / item_dest.name]
-        logger.info("目录实时监控-alist复制，lalalalal2---10")
+        # 转移后的目录项
+        #target_diritem: FileItem = item_transfer.target_diritem
+        # 文件路径
+        #target_diritem_path = target_diritem.path
+        #logger.info("目录实时监控-alist复制，文件路径: %s" % target_diritem_path)
+        # 转移后路径
+        #target_item: FileItem = item_transfer.target_item
+        #target_item_name = target_item.name
+        # 文件清单
+        item_file_list = item_transfer.file_list_new
         for file_path in item_file_list:
-            logger.info("目录实时监控-alist复制，lalalalal2---11-%s" % file_path)
-            # 路径替换
+            target_diritem_path = os.path.dirname(file_path)
+            target_item_name = os.path.basename(file_path)
+            logger.info("目录实时监控-alist复制，文件路径: %s" % target_diritem_path)
+            logger.info("目录实时监控-alist复制，文件名称: %s" % target_item_name)
+            src_dir = ''
+            dst_dir = ''
             if self._local_path and self._remote_path and file_path.startswith(self._local_path):
-                file_path = file_path.replace(self._local_path, self._remote_path).replace('\\', '/')
-            logger.info("目录实时监控-alist复制，转换后的源地址为: %s" % file_path)
+                src_dir = file_path.replace(self._local_path, self._remote_path).replace('\\', '/')
+            if self._local_path and self._remote_target_path and target_diritem_path.startswith(self._local_path):
+                dst_dir = target_diritem_path.replace(self._local_path, self._remote_target_path).replace('\\', '/')
+            logger.info("目录实时监控-alist复制，源文件: %s" % src_dir)
+            logger.info("目录实时监控-alist复制，目标文件夹: %s" % dst_dir)
+
+            if src_dir and dst_dir:
+                logger.info("目录实时监控-alist复制，准备调用alist")
+                fileItem: FileItem = FileItem()
+                fileItem.path = src_dir
+                fileItem.name = target_item_name
+                logger.info("目录实时监控-alist复制，准备调用alist-11111")
+                alist = Alist()
+                alist.get_folder(Path(dst_dir))
+                logger.info("目录实时监控-alist复制，准备调用alist-22222")
+                alist.copy(fileItem, Path(dst_dir), name)
+                logger.info("目录实时监控-alist复制，结束调用alist")
